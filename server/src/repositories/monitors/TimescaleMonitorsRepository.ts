@@ -119,6 +119,7 @@ export class TimescaleMonitorsRepository implements IMonitorsRepository {
 
 		const entity = this.toEntity(row);
 		entity.notifications = monitor.notifications ?? [];
+		entity.escalations = monitor.escalations ?? [];
 		return entity;
 	};
 
@@ -638,6 +639,7 @@ export class TimescaleMonitorsRepository implements IMonitorsRepository {
 
 		const entity = this.toEntity(row);
 		entity.notifications = patch.notifications ?? (await this.fetchNotificationIds([monitorId]).then((m) => m.get(monitorId) ?? []));
+		entity.escalations = patch.escalations ?? [];
 		return entity;
 	};
 
@@ -1021,6 +1023,7 @@ export class TimescaleMonitorsRepository implements IMonitorsRepository {
 		interval: row.interval_ms,
 		uptimePercentage: row.uptime_percentage ?? undefined,
 		notifications: [],
+		escalations: [],
 		secret: row.secret ?? undefined,
 		cpuAlertThreshold: row.cpu_alert_threshold,
 		cpuAlertCounter: row.cpu_alert_counter,
