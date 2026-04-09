@@ -14,7 +14,6 @@ import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
-import Box from "@mui/material/Box";
 import { Trash2 } from "lucide-react";
 import { HeaderDeleteControls } from "@/Components/monitors";
 import { GeoContinents } from "@/Types/GeoCheck";
@@ -37,8 +36,8 @@ import {
 	type Monitor,
 	type MonitorType,
 	type GamesMap,
-	type EscalationRule,
 	supportsGeoCheck,
+	type EscalationRule,
 } from "@/Types/Monitor";
 import type { Notification } from "@/Types/Notification";
 import type { MonitorFormData } from "@/Validation/monitor";
@@ -768,8 +767,8 @@ const CreateMonitorPage = () => {
 			/>
 
 			<ConfigBox
-				title="Escalation Rules"
-				subtitle="Configure notifications to be sent after the monitor has been down for specified periods"
+				title={t("pages.createMonitor.form.escalationRules.title")}
+				subtitle={t("pages.createMonitor.form.escalationRules.description")}
 				rightContent={
 					<Controller
 						name="escalations"
@@ -778,55 +777,87 @@ const CreateMonitorPage = () => {
 							const escalationRules = field.value ?? [];
 							return (
 								<Stack spacing={theme.spacing(LAYOUT.MD)}>
-									{escalationRules.map((rule: EscalationRule, index: number) => (
-										<Stack key={index} spacing={theme.spacing(SPACING.SM)} direction="row" alignItems="center" width="100%">
-											<TextField
-												label="Delay (minutes)"
-												type="number"
-												value={rule.delayMinutes}
-												onChange={(e) => {
-													const newRules = [...escalationRules];
-													newRules[index] = { ...rule, delayMinutes: parseInt(e.target.value || '1') };
-													field.onChange(newRules);
-												}}
-												sx={{ width: 100 }}
-											/>
-											<Autocomplete
-												multiple
-												options={(notifications ?? []).map((n) => ({
-													...n,
-													name: n.notificationName,
-												}))}
-												value={(notifications ?? [])
-													.map((n) => ({
-														...n,
-														name: n.notificationName,
-													}))
-													.filter((n) => rule.notificationIds.includes(n.id))}
-												getOptionLabel={(option) => `${option.name} (${option.address || option.type})`}
-												onChange={(_: unknown, newValue: (Notification & { name: string })[]) => {
-													const newRules = [...escalationRules];
-													newRules[index] = { ...rule, notificationIds: newValue.map((n) => n.id) };
-													field.onChange(newRules);
-												}}
-												isOptionEqualToValue={(option, value) => option.id === value.id}
-												sx={{ flex: 1 }}
-												renderInput={(params) => (
-													<TextField {...params} label="Notifications" />
+									{escalationRules.map((rule: EscalationRule, index: number) => {
+										const selectedNotificationsForRule = (notifications ?? [])
+											.map((n) => ({
+												...n,
+												name: n.notificationName,
+											}))
+											.filter((n) => rule.notificationIds.includes(n.id));
+										return (
+											<Stack key={index} spacing={theme.spacing(SPACING.SM)} width="100%">
+												<Stack spacing={theme.spacing(SPACING.SM)} direction="row" alignItems="center" width="100%">
+													<TextField
+														type="number"
+														value={rule.delayMinutes}
+														onChange={(e) => {
+															const newRules = [...escalationRules];
+															newRules[index] = { ...rule, delayMinutes: parseInt(e.target.value || '1') };
+															field.onChange(newRules);
+														}}
+														sx={{ width: 100 }}
+													/>
+													<Autocomplete
+														multiple
+														options={(notifications ?? []).map((n) => ({
+															...n,
+															name: n.notificationName,
+														}))}
+														value={selectedNotificationsForRule}
+														getOptionLabel={(option) => `${option.name} (${option.address || option.type})`}
+														onChange={(_: unknown, newValue: (Notification & { name: string })[]) => {
+															const newRules = [...escalationRules];
+															newRules[index] = { ...rule, notificationIds: newValue.map((n) => n.id) };
+															field.onChange(newRules);
+														}}
+														isOptionEqualToValue={(option, value) => option.id === value.id}
+														sx={{ flex: 1 }}
+													/>
+													<IconButton
+														size="small"
+														onClick={() => {
+															const newRules = escalationRules.filter((_: EscalationRule, i: number) => i !== index);
+															field.onChange(newRules);
+														}}
+														aria-label="Remove escalation rule"
+													>
+														<Trash2 size={16} />
+													</IconButton>
+												</Stack>
+												{selectedNotificationsForRule.length > 0 && (
+													<Stack
+														flex={1}
+														width="100%"
+													>
+														{selectedNotificationsForRule.map((notification, idx) => (
+															<Stack
+																direction="row"
+																alignItems="center"
+																key={notification.id}
+																width="100%"
+															>
+																<Typography flexGrow={1}>
+																	{notification.notificationName} ({notification.address || notification.type})
+																</Typography>
+																<IconButton
+																	size="small"
+																	onClick={() => {
+																		const newRules = [...escalationRules];
+																		newRules[index] = { ...rule, notificationIds: rule.notificationIds.filter(id => id !== notification.id) };
+																		field.onChange(newRules);
+																	}}
+																	aria-label="Remove notification from escalation rule"
+																>
+																	<Trash2 size={16} />
+																</IconButton>
+																{idx < selectedNotificationsForRule.length - 1 && <Divider />}
+															</Stack>
+														))}
+													</Stack>
 												)}
-											/>
-											<IconButton
-												size="small"
-												onClick={() => {
-													const newRules = escalationRules.filter((_: EscalationRule, i: number) => i !== index);
-													field.onChange(newRules);
-												}}
-												aria-label="Remove escalation rule"
-											>
-												<Trash2 size={16} />
-											</IconButton>
-										</Stack>
-									))}
+											</Stack>
+										);
+									})}
 									<Button
 										variant="outlined"
 										onClick={() => {

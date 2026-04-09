@@ -190,6 +190,7 @@ export class NotificationsService implements INotificationsService {
 	};
 
 	sendTestNotification = async (notification: Partial<Notification>) => {
+		  console.log("Testing notification:", notification.type, notification.notificationName);
 		switch (notification.type) {
 			case "email":
 				return await this.emailProvider.sendTestAlert(notification);
@@ -212,17 +213,26 @@ export class NotificationsService implements INotificationsService {
 		}
 	};
 
-	testAllNotifications = async (notificationIds: string[]) => {
-		const notifications = await this.notificationsRepository.findNotificationsByIds(notificationIds);
-		const tasks = notifications.map((notification) => this.sendTestNotification(notification));
-		const outcomes = await Promise.all(tasks);
-		const succeeded = outcomes.filter(Boolean).length;
-		const failed = outcomes.length - succeeded;
-		if (failed > 0) {
-			return false;
-		}
-		return true;
-	};
+testAllNotifications = async (notificationIds: string[]) => {
+  try {
+    const notifications = await this.notificationsRepository.findNotificationsByIds(notificationIds);
+    const tasks = notifications.map((notification) => this.sendTestNotification(notification));
+    const outcomes = await Promise.all(tasks);
+    const succeeded = outcomes.filter(Boolean).length;
+    const failed = outcomes.length - succeeded;
+    
+    console.log("Test notifications - Succeeded:", succeeded, "Failed:", failed);
+    
+    if (failed > 0) {
+      console.error("Some notifications failed to send");
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("testAllNotifications error:", error);
+    return false;
+  }
+};
 
 	createNotification = async (notificationData: Partial<Notification>, userId: string, teamId: string): Promise<Notification> => {
 		notificationData.userId = userId;
